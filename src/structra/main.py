@@ -19,7 +19,7 @@ It is the entry point of the application.
 import argparse
 from pathlib import Path
 from structra.logger_config import setup_logger, save_logs_to_file
-from structra.file_handler import handle_files
+from structra.structure_parser import handle_files
 
 
 def parse_arguments():
@@ -63,7 +63,7 @@ def main(args=None):
     if args.logging:
         output_dir = Path(args.output) if args.output else Path(".")
         save_logs_to_file(log_stream, output_dir)
-        logger.info(f"Logs saved to {output_dir}")
+        logger.info("Logs saved to %s", output_dir)
 
 
 if __name__ == "__main__":

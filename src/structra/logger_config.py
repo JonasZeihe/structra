@@ -11,55 +11,52 @@
 # logger_config.py
 
 """
-This module sets up the logging configuration for Structra.
-It provides functions to set up a logger and save logs to a file.
+This module is responsible for setting up the logging configuration.
+It supports logging to both the console and to a file.
 """
 
 import logging
-from datetime import datetime
-from pathlib import Path
+import os
 from io import StringIO
 
 
-def setup_logger() -> (logging.Logger, StringIO):
+def setup_logger():
     """
-    Sets up the logger for Structra. Logs are stored in memory and can be written to a file later.
+    Sets up the logging configuration for the application.
 
     Returns:
-        logging.Logger: Configured logger instance.
-        StringIO: Log stream to store logs in memory.
+        tuple: logger instance, log_stream (for saving to file later)
     """
-    logger = logging.getLogger("StructraLogger")
-    logger.setLevel(logging.INFO)
-
     log_stream = StringIO()
-    stream_handler = logging.StreamHandler(log_stream)
-    stream_handler.setLevel(logging.INFO)
-
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    stream_handler.setFormatter(formatter)
-
-    logger.addHandler(stream_handler)
+    logger = logging.getLogger("structra")
+    logger.setLevel(logging.INFO)
 
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
-    console_handler.setFormatter(formatter)
+    console_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    console_handler.setFormatter(console_format)
+
+    stream_handler = logging.StreamHandler(log_stream)
+    stream_handler.setLevel(logging.INFO)
+    stream_handler.setFormatter(console_format)
+
     logger.addHandler(console_handler)
+    logger.addHandler(stream_handler)
 
     return logger, log_stream
 
 
-def save_logs_to_file(log_stream: StringIO, log_dir: Path = Path(".")) -> None:
+def save_logs_to_file(log_stream, output_dir):
     """
-    Saves the in-memory logs to a log file.
+    Saves the logs from the log stream to a file in the specified directory.
 
     Args:
-        log_stream (StringIO): The in-memory log stream.
-        log_dir (Path): The directory where the log file will be saved.
+        log_stream (StringIO): Stream containing the logs to be saved.
+        output_dir (Path or str): Directory where the log file will be saved.
     """
-    log_dir.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_filename = log_dir / f"structra_log_{timestamp}.txt"
-
-    with log_filename.open("w", encoding="utf-8") as log_file:
-        log_file.write(log_stream.getvalue())
+    try:
+        log_file_path = os.path.join(output_dir, "structra_log.txt")
+        with open(log_file_path, "w", encoding="utf-8") as log_file:
+            log_file.write(log_stream.getvalue())
+    except OSError as e:
+        logging.error(f"Error saving logs to file: {e}")
