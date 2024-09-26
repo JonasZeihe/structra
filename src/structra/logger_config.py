@@ -11,52 +11,65 @@
 # logger_config.py
 
 """
-This module is responsible for setting up the logging configuration.
-It supports logging to both the console and to a file.
+This module handles the configuration of logging for the Structra application.
+It supports logging to both the console and a log file, depending on user preferences.
 """
 
 import logging
-import os
-from io import StringIO
+import sys
+from pathlib import Path
+from datetime import datetime
 
 
-def setup_logger():
+def setup_logger(
+    log_to_file: bool = False,
+    log_file_prefix: str = "structra_log",
+    log_level: int = logging.DEBUG,
+) -> logging.Logger:
     """
-    Sets up the logging configuration for the application.
-
-    Returns:
-        tuple: logger instance, log_stream (for saving to file later)
-    """
-    log_stream = StringIO()
-    logger = logging.getLogger("structra")
-    logger.setLevel(logging.INFO)
-
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-    console_format = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    console_handler.setFormatter(console_format)
-
-    stream_handler = logging.StreamHandler(log_stream)
-    stream_handler.setLevel(logging.INFO)
-    stream_handler.setFormatter(console_format)
-
-    logger.addHandler(console_handler)
-    logger.addHandler(stream_handler)
-
-    return logger, log_stream
-
-
-def save_logs_to_file(log_stream, output_dir):
-    """
-    Saves the logs from the log stream to a file in the specified directory.
+    Sets up the logger for the Structra application.
 
     Args:
-        log_stream (StringIO): Stream containing the logs to be saved.
-        output_dir (Path or str): Directory where the log file will be saved.
+        log_to_file (bool): If True, logs will also be saved to a file. Default is False.
+        log_file_prefix (str): The prefix for the log file name.
+        log_level (int): The minimum logging level. Default is logging.DEBUG.
+
+    Returns:
+        logging.Logger: Configured logger instance.
     """
-    try:
-        log_file_path = os.path.join(output_dir, "structra_log.txt")
-        with open(log_file_path, "w", encoding="utf-8") as log_file:
-            log_file.write(log_stream.getvalue())
-    except OSError as e:
-        logging.error(f"Error saving logs to file: {e}")
+    logger = logging.getLogger("structra_logger")
+    logger.setLevel(log_level)
+
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(log_level)
+    console_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    console_handler.setFormatter(console_formatter)
+    logger.addHandler(console_handler)
+
+    if log_to_file:
+        try:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            log_file = f"{log_file_prefix}_{timestamp}.txt"
+
+            log_file_path = Path(log_file)
+            log_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+            file_handler = logging.FileHandler(
+                log_file_path, mode="a", encoding="utf-8"
+            )
+            file_handler.setLevel(logging.INFO)
+            file_formatter = logging.Formatter(
+                "%(asctime)s - %(levelname)s - %(message)s"
+            )
+            file_handler.setFormatter(file_formatter)
+            logger.addHandler(file_handler)
+
+            logger.info(f"Logging to file: {log_file_path}")
+
+        except Exception as error:
+            logger.error(f"Failed to initialize file logging: {error}")
+
+    return logger
