@@ -28,12 +28,7 @@ from structra.structure_processor import StructureProcessor
 
 
 def main(args=None):
-    """
-    Main function that sets up logging, processes input files, and handles errors.
 
-    Args:
-        args (list, optional): Command-line arguments for testing purposes. Defaults to None.
-    """
     try:
         arguments = parse_arguments(args)
 
@@ -54,15 +49,6 @@ def main(args=None):
 
 
 def parse_arguments(args=None):
-    """
-    Parses command-line arguments.
-
-    Args:
-        args (list, optional): Arguments passed for testing. Defaults to None.
-
-    Returns:
-        argparse.Namespace: Parsed arguments.
-    """
     parser = argparse.ArgumentParser(description="Structra - File Structure Generator")
     parser.add_argument(
         "files",
@@ -78,16 +64,6 @@ def parse_arguments(args=None):
 
 
 def validate_files(files: list[str], logger) -> bool:
-    """
-    Validates if the provided files exist and have the correct .txt format.
-
-    Args:
-        files (list[str]): List of file paths as strings.
-        logger (logging.Logger): Logger instance for logging.
-
-    Returns:
-        bool: True if all files are valid, else False.
-    """
     invalid_files = [
         file for file in files if not Path(file).exists() or not file.endswith(".txt")
     ]
@@ -99,16 +75,8 @@ def validate_files(files: list[str], logger) -> bool:
 
 
 def process_files(files: list[str], logger):
-    """
-    Processes the given list of structure files and generates the folder structures.
-
-    Args:
-        files (list[str]): List of structure file paths.
-        logger (logging.Logger): Logger instance for logging.
-    """
     for file_path in files:
         file_path = Path(file_path)
-        root_folder_name = get_root_folder_name(file_path)
         output_directory = Path.cwd() / root_folder_name
 
         logger.info(f"Output directory set to: {output_directory}")
@@ -117,30 +85,7 @@ def process_files(files: list[str], logger):
         processor.process_pbs_file(file_path)
 
 
-def get_root_folder_name(file_path: Path) -> str:
-    """
-    Extracts the name of the root folder from the first line of the structure file.
-
-    Args:
-        file_path (Path): The path to the structure definition file.
-
-    Returns:
-        str: The name of the root folder.
-    """
-    with open(file_path, "r", encoding="utf-8") as file:
-        first_line = file.readline().strip()
-        root_folder = first_line.split("/")[0]
-    return root_folder
-
-
 def handle_error(logger, error):
-    """
-    Handles errors by logging them or printing if the logger is unavailable.
-
-    Args:
-        logger (logging.Logger): Logger instance.
-        error (Exception): Exception raised during execution.
-    """
     if logger:
         logger.error(f"An unexpected error occurred: {str(error)}")
     else:

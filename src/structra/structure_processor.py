@@ -25,85 +25,43 @@ class StructureProcessor:
     def __init__(self, output_directory: Path, logger: logging.Logger):
         self.output_directory = output_directory
         self.logger = logger
-        self.current_path = None
 
     def process_pbs_file(self, pbs_file_path: Path) -> None:
-        try:
-            with open(pbs_file_path, "r", encoding="utf-8") as file:
-                lines = file.readlines()
+        with open(pbs_file_path, "r", encoding="utf-8") as file:
+            lines = file.readlines()
 
-                if not lines:
-                    self.logger.error(f"The PBS file '{pbs_file_path}' is empty.")
-                    return
+        root_folder = lines[0].strip().rstrip("/")
+        root_path = self.output_directory / root_folder
+        root_path.mkdir(parents=True, exist_ok=True)
+        path_stack = [root_path]
 
-                root_folder = self._get_base_folder_from_pbs(lines[0])
-                self.current_path = self.output_directory / root_folder
+        for line in lines[1:]:
+            clean_line = self._clean_line(line)
 
-                if not self.current_path.exists():
-                    self.current_path.mkdir(parents=True, exist_ok=True)
-                    self.logger.info(
-                        f"Created root directory: {self.current_path.as_posix()}"
-                    )
+            if clean_line == root_folder:
+                continue
 
-                previous_indent = 0
-                path_stack = [self.current_path]
+            level = self._count_hierarchy_level(line)
 
-                for line in lines[1:]:
-                    clean_line, current_indent = self._parse_line(line)
-                    if not clean_line:
-                        continue
+            # Keep track of the path stack based on the hierarchy level
+            while len(path_stack) > level + 1:
+                path_stack.pop()
 
-                    if current_indent > previous_indent:
-                        path_stack.append(path_stack[-1] / clean_line)
-                    elif current_indent < previous_indent:
-                        for _ in range(previous_indent - current_indent):
-                            path_stack.pop()
-                        path_stack[-1] = path_stack[-1].parent / clean_line
-                    else:
-                        path_stack[-1] = path_stack[-1].parent / clean_line
+            full_path = path_stack[-1] / clean_line.rstrip("/")
 
-                    if clean_line.endswith("/"):
-                        self._create_directory(path_stack[-1])
-                    else:
-                        self._create_file(path_stack[-1])
+            # If it's a directory, create it and add it to the path stack
+            if clean_line.endswith("/"):
+                full_path.mkdir(parents=True, exist_ok=True)
+                path_stack.append(full_path)
+            else:
+                # Handle both empty and non-empty files
+                full_path.touch(exist_ok=True)
 
-                    previous_indent = current_indent
+    def _clean_line(self, line: str) -> str:
+        # Clean up the line by removing structure symbols and leading spaces
+        return line.lstrip("├──│└── ").strip()
 
-                self.logger.info("Completed processing the PBS structure.")
-
-        except Exception as e:
-            self.logger.error(
-                f"Failed to process PBS file: {pbs_file_path}. Error: {str(e)}"
-            )
-            raise
-
-    def _get_base_folder_from_pbs(self, first_line: str) -> str:
-        """
-        Extracts the root folder name from the first line of the PBS file.
-        """
-        return first_line.strip().rstrip("/")
-
-    def _parse_line(self, line: str) -> tuple:
-        """
-        Cleans a line by removing hierarchy symbols and extra spaces,
-        and calculates the indentation level based on leading spaces.
-        """
-        clean_line = line.replace("├──", "").replace("└──", "").replace("│", "").strip()
-        indent_level = (len(line) - len(line.lstrip())) // 4
-        return clean_line, indent_level
-
-    def _create_directory(self, folder_path: Path) -> None:
-        """
-        Creates a directory at the given path if it does not exist.
-        """
-        if not folder_path.exists():
-            folder_path.mkdir(parents=True, exist_ok=True)
-            self.logger.info(f"Created directory: {folder_path.as_posix()}")
-
-    def _create_file(self, file_path: Path) -> None:
-        """
-        Creates a file at the given path if it does not exist.
-        """
-        if not file_path.exists():
-            file_path.touch(exist_ok=True)
-            self.logger.info(f"Created file: {file_path.as_posix()}")
+    def _count_hierarchy_level(self, line: str) -> int:
+        # Calculate the hierarchy level based on the leading symbols or spaces
+        indent_level = len(line) - len(line.lstrip(" │"))
+        return indent_level // 4  # Assuming indentation is in multiples of 4 spaces
