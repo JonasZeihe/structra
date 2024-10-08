@@ -45,31 +45,46 @@ def setup_logger(
 
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(log_level)
-    console_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    console_handler.setFormatter(console_formatter)
+    console_handler.setFormatter(_get_log_formatter())
     logger.addHandler(console_handler)
 
     if log_to_file:
-        try:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            log_file = f"{log_file_prefix}_{timestamp}.txt"
-
-            log_file_path = Path(log_file)
-            log_file_path.parent.mkdir(parents=True, exist_ok=True)
-
-            file_handler = logging.FileHandler(
-                log_file_path, mode="a", encoding="utf-8"
-            )
-            file_handler.setLevel(logging.INFO)
-            file_formatter = logging.Formatter(
-                "%(asctime)s - %(levelname)s - %(message)s"
-            )
-            file_handler.setFormatter(file_formatter)
-            logger.addHandler(file_handler)
-
-            logger.info(f"Logging to file: {log_file_path}")
-
-        except Exception as error:
-            logger.error(f"Failed to initialize file logging: {error}")
+        _setup_file_logging(logger, log_file_prefix)
 
     return logger
+
+
+def _setup_file_logging(logger: logging.Logger, log_file_prefix: str) -> None:
+    """
+    Helper function to set up logging to a file.
+
+    Args:
+        logger (logging.Logger): Logger instance.
+        log_file_prefix (str): The prefix for the log file name.
+    """
+    try:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_file = f"{log_file_prefix}_{timestamp}.txt"
+        log_file_path = Path(log_file)
+
+        log_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+        file_handler = logging.FileHandler(log_file_path, mode="a", encoding="utf-8")
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(_get_log_formatter())
+
+        logger.addHandler(file_handler)
+        logger.info(f"Logging to file: {log_file_path}")
+
+    except Exception as error:
+        logger.error(f"Failed to initialize file logging: {error}")
+
+
+def _get_log_formatter() -> logging.Formatter:
+    """
+    Returns a consistent log formatter for both console and file handlers.
+
+    Returns:
+        logging.Formatter: A formatter instance.
+    """
+    return logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")

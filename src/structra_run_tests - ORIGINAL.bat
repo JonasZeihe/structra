@@ -12,12 +12,9 @@ REM ----------------------------------------------------------------------------
 @echo off
 cls
 
-REM Running tests with coverage
-echo Running structra tests with coverage...
-coverage run --source=structra -m unittest tests.test_structra
-
-REM Display coverage report in the terminal
-coverage report
+REM Running tests (For development purposes)
+echo Running structra tests...
+python -m unittest tests.test_structra
 
 REM Pause to keep the window open until the user presses a key
 echo.
