@@ -52,7 +52,7 @@ def main(args=None):
         handle_error(logger, f"File not found: {file_error}")
     except IsADirectoryError as dir_error:
         handle_error(logger, f"Expected a file but found a directory: {dir_error}")
-    except Exception as error:  # Catching general exception as a fallback
+    except Exception as error:
         handle_error(logger, error)
 
 
