@@ -1,3 +1,24 @@
+# ------------------------------------------------------------------------------
+# Operating System Files
+# ------------------------------------------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+
+# ------------------------------------------------------------------------------
+# Python Files
+# ------------------------------------------------------------------------------
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -5,6 +26,7 @@ __pycache__/
 
 # C extensions
 *.so
+*.pyd
 
 # Distribution / packaging
 .Python
@@ -20,14 +42,12 @@ parts/
 sdist/
 var/
 wheels/
-share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
 
@@ -45,29 +65,85 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *.cover
-*.py,cover
+*.py.cover
 .hypothesis/
 .pytest_cache/
+cover/
 
-# Translations
-*.mo
-*.pot
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
+# Pyre
+.pyre/
 
-# Flask stuff:
-instance/
-.webassets-cache
+# pytype
+.pytype/
 
-# Scrapy stuff:
-.scrapy
+# Cython debug symbols
+cython_debug/
 
-# Sphinx documentation
-docs/_build/
-target/
+# ------------------------------------------------------------------------------
+# Environment Files
+# ------------------------------------------------------------------------------
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+
+# dotenv
+.env
+
+# pyenv
+.python-version
+
+# pipenv
+# Pipfile.lock is recommended to be included in version control.
+# However, uncomment below if necessary.
+#Pipfile.lock
+
+# poetry
+# poetry.lock is recommended to be included in version control.
+# Uncomment below if necessary.
+#poetry.lock
+.pdm.toml
+.pdm-python
+.pdm-build/
+
+# PEP 582
+__pypackages__/
+
+# ------------------------------------------------------------------------------
+# IDE and Editor Files
+# ------------------------------------------------------------------------------
+# VS Code
+*.code-workspace
+.vscode/
+
+# PyCharm
+.idea/
+
+# JetBrains Rider
+.idea/
+
+# Eclipse
+.project
+.cproject
+.settings/
+.classpath
+
+# Spyder
+.spyderproject
+.spyproject
+
+# Rope
+.ropeproject
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -76,45 +152,85 @@ target/
 profile_default/
 ipython_config.py
 
-# pyenv
-.python-version
+# ------------------------------------------------------------------------------
+# Frameworks and Tools
+# ------------------------------------------------------------------------------
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
 
-# celery beat schedule file
+# Flask
+instance/
+.webassets-cache
+
+# Scrapy
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+target/
+
+# Celery
 celerybeat-schedule
-
-# dotenv
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
+celerybeat.pid
 
 # mkdocs documentation
 /site
 
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
+# Build artifacts
+build/
+dist/
+*.o
+*.a
+*.d
+*.so
+*.dSYM/
+*.exe
+*.out
+*.app
+*.log
 
-# Pyre type checker
-.pyre/
+# ------------------------------------------------------------------------------
+# Miscellaneous
+# ------------------------------------------------------------------------------
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*.bak
+*.backup
 
-# pytype static type analyzer
-.pytype/
+# Lock files
+.lock
 
-# Cython debug symbols
-cython_debug/
+# Coverage tool reports
+coverage/
+*.cover
 
-# misc
-devtesting
+# Miscellaneous files
+*.pid
+*.seed
+*.pid.lock
+*.log
+*.trace
+*.gz
+*.orig
+*.rej
 
+# Custom directories and files
+devtesting/
+logs/
+temp/
+cache/
+
+# ------------------------------------------------------------------------------
+# Hidden files and folders
+# ------------------------------------------------------------------------------
+# Ignore all hidden files and folders (except for specific ones)
+.*
+!.git/
+!.well-known/
+!.github/

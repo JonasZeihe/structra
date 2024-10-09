@@ -1,0 +1,82 @@
+name: Build, Test, and Release Structra
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+
+      - name: Run Tests
+        run: |
+          $env:PYTHONPATH="D:\a\structra\structra\src"
+          python -m unittest discover -s src/tests -p "*_structra.py"
+
+  build:
+    needs: test
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+
+      - name: Build executable with timestamp
+        run: |
+          $currentDate = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
+          pyinstaller --name "structra_$($currentDate)" --onefile src/structra/main.py
+        shell: pwsh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: structra-exe
+          path: dist/structra_*.exe
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: structra-exe
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: structra_*.exe
+          tag_name: "v${{ github.run_id }}-${{ github.run_number }}"
+          name: "Release ${{ github.run_id }}-${{ github.run_number }}"
+          body: "Automated release of structra version ${{ github.run_id }}-${{ github.run_number }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
