@@ -21,9 +21,6 @@ echo Running all tests with coverage...
 coverage run --source=structra -m unittest discover -s tests -p "test_*.py"
 coverage report -m
 
-REM Optional: Generate an HTML report
-coverage html
-
 echo.
 echo Coverage report complete. Check the HTML report for detailed results in the 'htmlcov' directory.
 echo Press any key to exit...

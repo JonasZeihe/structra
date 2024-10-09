@@ -22,6 +22,11 @@ import logging
 
 
 class StructureProcessor:
+    """
+    Processes Project Structure (PBS) files to generate folders and files according
+    to the hierarchy defined in the input file.
+    """
+
     def __init__(self, output_directory: Path, logger: logging.Logger):
         """
         Initializes the StructureProcessor with the output directory and logger.
@@ -68,7 +73,7 @@ class StructureProcessor:
 
         except FileNotFoundError:
             self.logger.error(f"PBS file '{pbs_file_path}' not found.")
-        except Exception as e:
+        except OSError as e:
             self.logger.error(f"Error processing PBS file '{pbs_file_path}': {e}")
 
     def _read_pbs_file(self, pbs_file_path: Path) -> list[str]:
@@ -107,7 +112,7 @@ class StructureProcessor:
         try:
             directory_path.mkdir(parents=True, exist_ok=True)
             self.logger.info(f"Directory created: {directory_path}")
-        except Exception as e:
+        except OSError as e:
             self.logger.error(f"Failed to create directory '{directory_path}': {e}")
 
     def _create_file(self, file_path: Path) -> None:
@@ -120,7 +125,7 @@ class StructureProcessor:
         try:
             file_path.touch(exist_ok=True)
             self.logger.info(f"File created: {file_path}")
-        except Exception as e:
+        except OSError as e:
             self.logger.error(f"Failed to create file '{file_path}': {e}")
 
     def _adjust_path_stack(self, path_stack: list[Path], level: int) -> None:

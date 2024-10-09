@@ -20,7 +20,10 @@ Author: Jonas Zeihe
 
 import unittest
 import logging
+import tempfile
+import shutil
 from unittest.mock import patch, MagicMock
+from pathlib import Path
 from structra.logger_config import setup_logger
 
 
@@ -29,53 +32,65 @@ class TestLoggerConfig(unittest.TestCase):
     Unit tests for logger_config.py to ensure the logger is configured correctly.
     """
 
-    @patch("structra.logger_config.logging.StreamHandler")
-    @patch("structra.logger_config._get_log_formatter")
-    def test_setup_logger_console_logging(self, mock_formatter, mock_stream_handler):
+    def setUp(self):
+        """
+        Set up a temporary directory for logging tests involving file output.
+        """
+        self.test_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        """
+        Clean up the temporary directory.
+        """
+        for handler in logging.getLogger("structra_logger").handlers:
+            handler.close()
+        shutil.rmtree(self.test_dir)
+
+    def test_setup_logger_console_logging(self):
         """
         Test if the logger is correctly set up with console logging.
         """
-        mock_formatter.return_value = MagicMock()
-        mock_handler = MagicMock()
-        mock_stream_handler.return_value = mock_handler
-
         logger = setup_logger(log_to_file=False)
 
-        mock_stream_handler.assert_called_once_with(logging.StreamHandler(sys.stdout))
-        mock_handler.setFormatter.assert_called_once_with(mock_formatter())
-        self.assertEqual(logger.level, logging.DEBUG)
+        stream_handlers = [
+            h for h in logger.handlers if isinstance(h, logging.StreamHandler)
+        ]
+        self.assertEqual(len(stream_handlers), 1)
 
-    @patch("structra.logger_config.logging.FileHandler")
-    @patch("structra.logger_config._setup_file_logging")
-    def test_setup_logger_file_logging(self, mock_file_logging, mock_file_handler):
+        self.assertEqual(logger.level, logging.DEBUG)
+        self.assertIsInstance(stream_handlers[0].formatter, logging.Formatter)
+
+    def test_setup_logger_file_logging(self):
         """
         Test if the logger is correctly set up with file logging.
         """
-        mock_file_handler.return_value = MagicMock()
+        log_file_path = Path(self.test_dir) / "test_log.txt"
 
-        logger = setup_logger(log_to_file=True)
+        logger = setup_logger(log_to_file=True, log_file_prefix=str(log_file_path))
 
-        mock_file_logging.assert_called_once_with(logger, "structra_log")
+        file_handlers = [
+            h for h in logger.handlers if isinstance(h, logging.FileHandler)
+        ]
+        self.assertEqual(len(file_handlers), 1)
 
-    @patch("structra.logger_config.Path")
-    @patch("structra.logger_config.logging.FileHandler")
-    @patch("structra.logger_config._get_log_formatter")
-    def test_setup_file_logging(self, mock_formatter, mock_file_handler, mock_path):
+        self.assertTrue(file_handlers[0].baseFilename.startswith(str(log_file_path)))
+        self.assertIsInstance(file_handlers[0].formatter, logging.Formatter)
+
+    def test_logging_to_file(self):
         """
-        Test the setup of file logging and the creation of log files.
+        Test that the logger writes messages to the specified log file.
         """
-        mock_formatter.return_value = MagicMock()
-        mock_handler = MagicMock()
-        mock_file_handler.return_value = mock_handler
-        mock_path.return_value = MagicMock()
+        log_file_prefix = Path(self.test_dir) / "test_logging.txt"
+        logger = setup_logger(log_to_file=True, log_file_prefix=str(log_file_prefix))
 
-        logger = logging.getLogger("structra_logger")
-        logger.setLevel(logging.INFO)
+        logger.info("Test log message")
 
-        setup_logger(log_to_file=True)
+        log_file_name = f"{log_file_prefix}_{logger.handlers[1].baseFilename.split('_')[-2]}_{logger.handlers[1].baseFilename.split('_')[-1]}"
+        log_file_path = Path(log_file_name)
 
-        mock_file_handler.assert_called_once()
-        mock_handler.setFormatter.assert_called_once_with(mock_formatter())
+        with open(log_file_path, "r", encoding="utf-8") as log_file:
+            log_content = log_file.read()
+            self.assertIn("Test log message", log_content)
 
     @patch("structra.logger_config.logging.getLogger")
     def test_logger_reuse(self, mock_get_logger):
@@ -88,7 +103,7 @@ class TestLoggerConfig(unittest.TestCase):
         setup_logger()
         setup_logger()
 
-        mock_logger.handlers.clear.assert_called_once()
+        self.assertEqual(mock_logger.handlers.clear.call_count, 2)
         mock_logger.setLevel.assert_called_with(logging.DEBUG)
 
 

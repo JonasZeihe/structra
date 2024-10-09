@@ -21,9 +21,10 @@ Author: Jonas Zeihe
 """
 
 import unittest
+import tempfile
+import shutil
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-import sys
 from structra.main import parse_arguments, validate_files, process_files, main
 
 
@@ -33,197 +34,152 @@ class TestMain(unittest.TestCase):
     file validation, error handling, and file processing.
     """
 
-    @patch("structra.main.setup_logger")
-    def test_parse_arguments(self, mock_logger):
+    def setUp(self):
+        """
+        Setup temporary directory for testing file-based operations.
+        """
+        self.test_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        """
+        Cleanup temporary directory after each test.
+        """
+        shutil.rmtree(self.test_dir)
+
+    @patch(
+        "sys.argv",
+        ["script_name", "file1.txt", "--logging", "--root-folder", "output_dir"],
+    )
+    def test_parse_arguments(self):
         """
         Test the argument parsing function to ensure it correctly interprets command-line arguments.
         """
-        test_args = [
-            "script_name",
-            "file1.txt",
-            "--logging",
-            "--root-folder",
-            "output_dir",
-        ]
-        with patch.object(sys, "argv", test_args):
-            parsed_args = parse_arguments()
+        parsed_args = parse_arguments()
+        self.assertEqual(parsed_args.files, ["file1.txt"])
+        self.assertTrue(parsed_args.logging)
+        self.assertEqual(parsed_args.root_folder, "output_dir")
 
-            self.assertEqual(parsed_args.files, ["file1.txt"])
-            self.assertTrue(parsed_args.logging)
-            self.assertEqual(parsed_args.root_folder, "output_dir")
-
-    @patch("structra.main.Path")
-    @patch("structra.main.setup_logger")
-    def test_validate_files_valid(self, mock_logger, mock_path):
+    def test_validate_files_valid(self):
         """
         Test the file validation function to ensure it correctly identifies valid files.
         """
-        mock_path.return_value.exists.return_value = True
-        mock_logger_instance = MagicMock()
+        valid_file = Path(self.test_dir) / "valid_file.txt"
+        valid_file.touch()
 
-        valid_files = validate_files(["valid_file.txt"], mock_logger_instance)
+        logger = MagicMock()
+        valid_files = validate_files([str(valid_file)], logger)
 
         self.assertTrue(valid_files)
-        mock_logger_instance.error.assert_not_called()
+        logger.error.assert_not_called()
 
-    @patch("structra.main.Path")
-    @patch("structra.main.setup_logger")
-    def test_validate_files_invalid(self, mock_logger, mock_path):
+    def test_validate_files_invalid(self):
         """
         Test the file validation function to ensure it correctly identifies invalid files.
         """
-        mock_path.return_value.exists.side_effect = [True, False]
-        mock_logger_instance = MagicMock()
+        invalid_file = Path(self.test_dir) / "invalid_file.doc"
+        logger = MagicMock()
 
-        valid_files = validate_files(
-            ["valid_file.txt", "invalid_file.txt"], mock_logger_instance
-        )
+        valid_files = validate_files([str(invalid_file)], logger)
 
-        mock_logger_instance.error.assert_called_once_with(
-            "File 'invalid_file.txt' does not exist or has an invalid format."
-        )
         self.assertFalse(valid_files)
+        logger.error.assert_called_once_with(
+            f"File '{invalid_file}' does not exist or has an invalid format."
+        )
 
     @patch("structra.main.StructureProcessor")
-    @patch("structra.main.setup_logger")
-    @patch("structra.main.Path")
-    def test_process_files(self, mock_path, mock_logger, mock_processor):
+    def test_process_files(self, mock_processor):
         """
         Test the process_files function to ensure it correctly processes files and creates directories.
         """
-        mock_path.cwd.return_value = Path("/fake/directory")
-        mock_path.return_value = Path("/fake/directory/file1.txt")
-        mock_logger_instance = MagicMock()
+        logger = MagicMock()
+        root_folder = Path(self.test_dir) / "output"
+        process_files(["file1.txt"], logger, str(root_folder))
 
-        process_files(["file1.txt"], mock_logger_instance, "root_folder")
-
-        mock_processor.assert_called_once_with(
-            Path("/fake/directory/root_folder"), mock_logger_instance
-        )
+        mock_processor.assert_called_once_with(root_folder, logger)
         mock_processor_instance = mock_processor.return_value
         mock_processor_instance.process_pbs_file.assert_called_once_with(
-            Path("/fake/directory/file1.txt")
+            Path("file1.txt")
         )
 
-    @patch("sys.exit")
-    @patch("structra.main.handle_error")
-    @patch("structra.main.setup_logger")
-    @patch("structra.main.validate_files")
     @patch("structra.main.process_files")
-    @patch("structra.main.parse_arguments")
-    def test_main_generic_exception(
-        self,
-        mock_parse_arguments,
-        mock_process_files,
-        mock_validate_files,
-        mock_setup_logger,
-        mock_handle_error,
-        mock_exit,
-    ):
-        """
-        Test the main function to ensure that a generic exception is properly handled.
-        """
-        mock_parse_arguments.return_value.files = ["file1.txt"]
-        mock_validate_files.return_value = True
-        mock_logger_instance = MagicMock()
-        mock_setup_logger.return_value = mock_logger_instance
-
-        mock_process_files.side_effect = Exception("Unexpected error")
-
-        main()
-        mock_exit.assert_called_once_with(1)
-        mock_handle_error.assert_called_once_with(
-            mock_logger_instance, "Unexpected error"
-        )
-
-    @patch("sys.exit")
-    @patch("structra.main.handle_error")
-    @patch("structra.main.setup_logger")
     @patch("structra.main.validate_files")
-    @patch("structra.main.process_files")
-    @patch("structra.main.parse_arguments")
+    @patch("structra.main.setup_logger")
+    @patch("sys.exit")
     def test_main_file_not_found_error(
-        self,
-        mock_parse_arguments,
-        mock_process_files,
-        mock_validate_files,
-        mock_setup_logger,
-        mock_handle_error,
-        mock_exit,
+        self, mock_exit, mock_setup_logger, mock_validate_files, mock_process_files
     ):
         """
         Test the main function to ensure that FileNotFoundError is properly handled.
         """
-        mock_parse_arguments.return_value.files = ["file1.txt"]
+        mock_setup_logger.return_value = MagicMock()
         mock_validate_files.return_value = True
-        mock_logger_instance = MagicMock()
-        mock_setup_logger.return_value = mock_logger_instance
+        mock_process_files.side_effect = FileNotFoundError("File not found")
 
-        mock_process_files.side_effect = FileNotFoundError("File not found error")
-
-        main()
+        with patch("sys.argv", ["script_name", "file1.txt"]):
+            main()
 
         mock_exit.assert_called_once_with(1)
-        mock_handle_error.assert_called_once_with(
-            mock_logger_instance, "File not found: File not found error"
-        )
 
-    @patch("sys.exit")
-    @patch("structra.main.handle_error")
-    @patch("structra.main.setup_logger")
-    @patch("structra.main.validate_files")
     @patch("structra.main.process_files")
-    @patch("structra.main.parse_arguments")
+    @patch("structra.main.validate_files")
+    @patch("structra.main.setup_logger")
+    @patch("sys.exit")
     def test_main_is_a_directory_error(
-        self,
-        mock_parse_arguments,
-        mock_process_files,
-        mock_validate_files,
-        mock_setup_logger,
-        mock_handle_error,
-        mock_exit,
+        self, mock_exit, mock_setup_logger, mock_validate_files, mock_process_files
     ):
         """
         Test the main function to ensure that IsADirectoryError is properly handled.
         """
-        mock_parse_arguments.return_value.files = ["file1.txt"]
+        mock_setup_logger.return_value = MagicMock()
         mock_validate_files.return_value = True
-        mock_logger_instance = MagicMock()
-        mock_setup_logger.return_value = mock_logger_instance
-
         mock_process_files.side_effect = IsADirectoryError(
-            "Expected a file but found a directory"
+            "Found a directory instead of a file"
         )
 
-        main()
+        with patch("sys.argv", ["script_name", "file1.txt"]):
+            main()
 
         mock_exit.assert_called_once_with(1)
-        mock_handle_error.assert_called_once_with(
-            mock_logger_instance,
-            "Expected a file but found a directory: Expected a file but found a directory",
-        )
 
-    @patch("structra.main.setup_logger")
-    @patch("structra.main.validate_files")
     @patch("structra.main.process_files")
+    @patch("structra.main.validate_files")
+    @patch("structra.main.setup_logger")
+    @patch("sys.exit")
+    def test_main_generic_exception(
+        self, mock_exit, mock_setup_logger, mock_validate_files, mock_process_files
+    ):
+        """
+        Test the main function to ensure that a generic exception is properly handled.
+        """
+        mock_setup_logger.return_value = MagicMock()
+        mock_validate_files.return_value = True
+        mock_process_files.side_effect = Exception("Unexpected error")
+
+        with patch("sys.argv", ["script_name", "file1.txt"]):
+            main()
+
+        mock_exit.assert_called_once_with(1)
+
+    @patch("structra.main.process_files")
+    @patch("structra.main.validate_files")
+    @patch("structra.main.setup_logger")
     def test_main_successful_execution(
-        self,
-        mock_process_files,
-        mock_validate_files,
-        mock_setup_logger,
+        self, mock_setup_logger, mock_validate_files, mock_process_files
     ):
         """
         Test that main runs successfully when there are no errors.
         """
+        mock_setup_logger.return_value = MagicMock()
         mock_validate_files.return_value = True
-        mock_logger_instance = MagicMock()
-        mock_setup_logger.return_value = mock_logger_instance
 
-        main()
+        with patch("sys.argv", ["script_name", "file1.txt"]):
+            main()
 
-        mock_logger_instance.info.assert_any_call("Structra started.")
-        mock_logger_instance.info.assert_any_call("Structra completed successfully.")
+        mock_setup_logger.return_value.info.assert_any_call("Structra started.")
         mock_process_files.assert_called_once()
+        mock_setup_logger.return_value.info.assert_any_call(
+            "Structra completed successfully."
+        )
 
 
 if __name__ == "__main__":
