@@ -110,7 +110,6 @@ __pypackages__/
 # IDE and Editor Files
 # ----------------------------------------------------------------------
 # VS Code
-*.code-workspace
 .vscode/
 
 # PyCharm
