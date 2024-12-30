@@ -1,6 +1,7 @@
 @echo off
 REM ----------------------------------------------------------------------
-REM Structra - A tool to generate folder and file structures based on input text files
+REM Universal Application Runner
+REM Runs the application within the virtual environment, allowing drag-and-drop for input files.
 REM 
 REM Copyright (c) 2024 Jonas Zeihe
 REM Licensed under the MIT License. See LICENSE file in the project root for details.
@@ -16,11 +17,19 @@ if "%~1"=="" (
     exit /b 1
 )
 
-REM Running structra.exe with the provided file(s)
-echo Running structra.exe with logging...
-structra.exe --logging %*
+REM Activate the virtual environment
+call venv\Scripts\activate
 
-REM Pause to keep the window open until the user presses a key
-echo.
-echo Press any key to exit...
+REM Set PYTHONPATH to include the src directory
+set PYTHONPATH=%~dp0src
+
+REM Run the application with the provided file(s)
+echo Running the application with input files...
+python src/structra/main.py %*
+
+REM Inform the user
+echo Application execution complete. Press any key to deactivate the virtual environment and exit...
 pause > nul
+
+REM Deactivate the virtual environment
+deactivate
