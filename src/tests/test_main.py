@@ -25,7 +25,7 @@ import tempfile
 import shutil
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-from structra.main import parse_arguments, validate_files, process_files, main
+from app.main import parse_arguments, validate_files, process_files, main
 
 
 class TestMain(unittest.TestCase):
@@ -86,7 +86,7 @@ class TestMain(unittest.TestCase):
             f"File '{invalid_file}' does not exist or has an invalid format."
         )
 
-    @patch("structra.main.StructureProcessor")
+    @patch("app.main.StructureProcessor")
     def test_process_files(self, mock_processor):
         """
         Test the process_files function to ensure it correctly processes files and creates directories.
@@ -101,9 +101,9 @@ class TestMain(unittest.TestCase):
             Path("file1.txt")
         )
 
-    @patch("structra.main.process_files")
-    @patch("structra.main.validate_files")
-    @patch("structra.main.setup_logger")
+    @patch("app.main.process_files")
+    @patch("app.main.validate_files")
+    @patch("app.main.setup_logger")
     @patch("sys.exit")
     def test_main_file_not_found_error(
         self, mock_exit, mock_setup_logger, mock_validate_files, mock_process_files
@@ -120,9 +120,9 @@ class TestMain(unittest.TestCase):
 
         mock_exit.assert_called_once_with(1)
 
-    @patch("structra.main.process_files")
-    @patch("structra.main.validate_files")
-    @patch("structra.main.setup_logger")
+    @patch("app.main.process_files")
+    @patch("app.main.validate_files")
+    @patch("app.main.setup_logger")
     @patch("sys.exit")
     def test_main_is_a_directory_error(
         self, mock_exit, mock_setup_logger, mock_validate_files, mock_process_files
@@ -141,9 +141,9 @@ class TestMain(unittest.TestCase):
 
         mock_exit.assert_called_once_with(1)
 
-    @patch("structra.main.process_files")
-    @patch("structra.main.validate_files")
-    @patch("structra.main.setup_logger")
+    @patch("app.main.process_files")
+    @patch("app.main.validate_files")
+    @patch("app.main.setup_logger")
     @patch("sys.exit")
     def test_main_generic_exception(
         self, mock_exit, mock_setup_logger, mock_validate_files, mock_process_files
@@ -160,9 +160,9 @@ class TestMain(unittest.TestCase):
 
         mock_exit.assert_called_once_with(1)
 
-    @patch("structra.main.process_files")
-    @patch("structra.main.validate_files")
-    @patch("structra.main.setup_logger")
+    @patch("app.main.process_files")
+    @patch("app.main.validate_files")
+    @patch("app.main.setup_logger")
     def test_main_successful_execution(
         self, mock_setup_logger, mock_validate_files, mock_process_files
     ):

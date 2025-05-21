@@ -22,8 +22,8 @@ Author: Jonas Zeihe
 import argparse
 import sys
 from pathlib import Path
-from structra.logger_config import setup_logger
-from structra.structure_processor import StructureProcessor
+from app.logger_config import setup_logger
+from app.structure_processor import StructureProcessor
 
 
 def main(args=None):

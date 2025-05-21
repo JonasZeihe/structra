@@ -24,7 +24,7 @@ import tempfile
 import shutil
 from unittest.mock import patch, MagicMock
 from pathlib import Path
-from structra.logger_config import setup_logger
+from app.logger_config import setup_logger
 
 
 class TestLoggerConfig(unittest.TestCase):
@@ -92,7 +92,7 @@ class TestLoggerConfig(unittest.TestCase):
             log_content = log_file.read()
             self.assertIn("Test log message", log_content)
 
-    @patch("structra.logger_config.logging.getLogger")
+    @patch("app.logger_config.logging.getLogger")
     def test_logger_reuse(self, mock_get_logger):
         """
         Test that the logger reuses existing handlers when re-initialized.
