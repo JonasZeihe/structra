@@ -25,8 +25,8 @@ import tempfile
 from pathlib import Path
 import os
 import stat
-from structra.structure_processor import StructureProcessor
-from structra.logger_config import setup_logger
+from app.structure_processor import StructureProcessor
+from app.logger_config import setup_logger
 
 
 class TestStructra(unittest.TestCase):
@@ -52,7 +52,7 @@ class TestStructra(unittest.TestCase):
                 "├── src/\n"
                 "│   ├── build/\n"
                 "│   ├── dist/\n"
-                "│   ├── structra/\n"
+                "│   ├── app/\n"
                 "│   │   ├── __pycache__/\n"
                 "│   │   ├── __init__.py\n"
                 "│   │   ├── logger_config.py\n"
@@ -93,12 +93,12 @@ class TestStructra(unittest.TestCase):
             "structra/src/",
             "structra/src/build/",
             "structra/src/dist/",
-            "structra/src/structra/",
-            "structra/src/structra/__pycache__/",
-            "structra/src/structra/__init__.py",
-            "structra/src/structra/logger_config.py",
-            "structra/src/structra/main.py",
-            "structra/src/structra/structure_processor.py",
+            "structra/src/app/",
+            "structra/src/app/__pycache__/",
+            "structra/src/app/__init__.py",
+            "structra/src/app/logger_config.py",
+            "structra/src/app/main.py",
+            "structra/src/app/structure_processor.py",
             "structra/src/tests/",
             "structra/src/tests/__pycache__/",
             "structra/src/tests/__init__.py",
@@ -119,7 +119,7 @@ class TestStructra(unittest.TestCase):
 
         empty_files = [
             "structra/.gitignore",
-            "structra/src/structra/__init__.py",
+            "structra/src/app/__init__.py",
             "structra/src/tests/__init__.py",
         ]
         for empty_file in empty_files:
