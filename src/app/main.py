@@ -13,8 +13,9 @@
 """
 Main entry point for the Structra application.
 
-This module handles argument parsing, logging setup, and initiates the process
-of generating file structures based on input project structure files (PBS).
+This module handles argument parsing, drag-and-drop or paste interaction,
+logging setup, and initiates the generation of file structures based on
+project structure (PBS) text files.
 
 Author: Jonas Zeihe
 """
@@ -29,15 +30,14 @@ from app.structure_processor import StructureProcessor
 def main(args=None):
     """
     Main function to initiate the Structra application.
-    Parses arguments, sets up logging, validates files, and processes them.
-
-    Args:
-        args (list, optional): Command-line arguments to parse. Defaults to None.
+    Parses arguments, or if none are provided, prompts for file input interactively.
     """
     logger = None
     try:
-        arguments = parse_arguments(args)
+        if args is None or len(args) == 0:
+            args = interactive_prompt()
 
+        arguments = parse_arguments(args)
         logger = setup_logger(log_to_file=arguments.logging)
         logger.info("Structra started.")
 
@@ -46,14 +46,34 @@ def main(args=None):
             sys.exit(1)
 
         process_files(arguments.files, logger, arguments.root_folder)
-
         logger.info("Structra completed successfully.")
+
     except FileNotFoundError as file_error:
         handle_error(logger, f"File not found: {file_error}")
     except IsADirectoryError as dir_error:
         handle_error(logger, f"Expected a file but found a directory: {dir_error}")
     except Exception as error:
         handle_error(logger, error)
+
+
+def interactive_prompt():
+    """
+    Prompts the user to drag-and-drop or paste PBS .txt files into the terminal.
+    Returns:
+        list[str]: The list of arguments to parse.
+    """
+    print("\n📂 Welcome to Structra!")
+    print(
+        "Drag and drop one or more .txt files into this terminal, then press [Enter]:"
+    )
+    raw_input = input().strip()
+
+    if not raw_input:
+        print("No files provided. Exiting.")
+        sys.exit(0)
+
+    file_paths = raw_input.split()
+    return file_paths
 
 
 def parse_arguments(args=None):
@@ -116,7 +136,7 @@ def process_files(files: list[str], logger, root_folder_name: str):
         logger (Logger): Logger instance for logging.
         root_folder_name (str): Name of the root folder where the structure will be generated.
     """
-    output_directory = Path.cwd() / root_folder_name
+    output_directory = Path(sys.argv[0]).resolve().parent / root_folder_name
     logger.info(f"Output directory set to: {output_directory}")
 
     for file_path_str in files:
