@@ -65,11 +65,8 @@ class TestMain(unittest.TestCase):
         """
         valid_file = Path(self.test_dir) / "valid_file.txt"
         valid_file.touch()
-
         logger = MagicMock()
-        valid_files = validate_files([str(valid_file)], logger)
-
-        self.assertTrue(valid_files)
+        self.assertTrue(validate_files([str(valid_file)], logger))
         logger.error.assert_not_called()
 
     def test_validate_files_invalid(self):
@@ -78,10 +75,7 @@ class TestMain(unittest.TestCase):
         """
         invalid_file = Path(self.test_dir) / "invalid_file.doc"
         logger = MagicMock()
-
-        valid_files = validate_files([str(invalid_file)], logger)
-
-        self.assertFalse(valid_files)
+        self.assertFalse(validate_files([str(invalid_file)], logger))
         logger.error.assert_called_once_with(
             f"File '{invalid_file}' does not exist or has an invalid format."
         )
@@ -94,10 +88,8 @@ class TestMain(unittest.TestCase):
         logger = MagicMock()
         root_folder = Path(self.test_dir) / "output"
         process_files(["file1.txt"], logger, str(root_folder))
-
         mock_processor.assert_called_once_with(root_folder, logger)
-        mock_processor_instance = mock_processor.return_value
-        mock_processor_instance.process_pbs_file.assert_called_once_with(
+        mock_processor.return_value.process_pbs_file.assert_called_once_with(
             Path("file1.txt")
         )
 
@@ -114,10 +106,7 @@ class TestMain(unittest.TestCase):
         mock_setup_logger.return_value = MagicMock()
         mock_validate_files.return_value = True
         mock_process_files.side_effect = FileNotFoundError("File not found")
-
-        with patch("sys.argv", ["script_name", "file1.txt"]):
-            main()
-
+        main(["file1.txt"])
         mock_exit.assert_called_once_with(1)
 
     @patch("app.main.process_files")
@@ -132,13 +121,8 @@ class TestMain(unittest.TestCase):
         """
         mock_setup_logger.return_value = MagicMock()
         mock_validate_files.return_value = True
-        mock_process_files.side_effect = IsADirectoryError(
-            "Found a directory instead of a file"
-        )
-
-        with patch("sys.argv", ["script_name", "file1.txt"]):
-            main()
-
+        mock_process_files.side_effect = IsADirectoryError("Expected a file")
+        main(["file1.txt"])
         mock_exit.assert_called_once_with(1)
 
     @patch("app.main.process_files")
@@ -153,11 +137,8 @@ class TestMain(unittest.TestCase):
         """
         mock_setup_logger.return_value = MagicMock()
         mock_validate_files.return_value = True
-        mock_process_files.side_effect = Exception("Unexpected error")
-
-        with patch("sys.argv", ["script_name", "file1.txt"]):
-            main()
-
+        mock_process_files.side_effect = Exception("Boom")
+        main(["file1.txt"])
         mock_exit.assert_called_once_with(1)
 
     @patch("app.main.process_files")
@@ -169,17 +150,18 @@ class TestMain(unittest.TestCase):
         """
         Test that main runs successfully when there are no errors.
         """
-        mock_setup_logger.return_value = MagicMock()
+        mock_logger = MagicMock()
+        mock_setup_logger.return_value = mock_logger
         mock_validate_files.return_value = True
 
-        with patch("sys.argv", ["script_name", "file1.txt"]):
-            main()
+        main(["file1.txt"])
 
-        mock_setup_logger.return_value.info.assert_any_call("Structra started.")
-        mock_process_files.assert_called_once()
-        mock_setup_logger.return_value.info.assert_any_call(
-            "Structra completed successfully."
+        mock_setup_logger.assert_called_once()
+        mock_process_files.assert_called_once_with(
+            ["file1.txt"], mock_logger, "structra_output"
         )
+        mock_logger.info.assert_any_call("Structra started.")
+        mock_logger.info.assert_any_call("Structra completed successfully.")
 
 
 if __name__ == "__main__":
